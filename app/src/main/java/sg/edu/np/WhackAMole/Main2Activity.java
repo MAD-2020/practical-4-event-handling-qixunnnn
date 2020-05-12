@@ -11,8 +11,10 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import java.util.Random;
+import java.util.Timer;
+import java.util.TimerTask;
 
-public class Main2Activity extends AppCompatActivity {
+public class Main2Activity extends AppCompatActivity implements View.OnClickListener{
     /* Hint
         - The function setNewMole() uses the Random class to generate a random value ranged from 0 to 8.
         - The function doCheck() takes in button selected and computes a hit or miss and adjust the score accordingly.
@@ -20,77 +22,135 @@ public class Main2Activity extends AppCompatActivity {
         - Feel free to modify the function to suit your program.
     */
 
-
+    final String TAG = "Whack-A-Mole! 2.0";
+    private TextView txtScore;
+    private int advancedScore;
+    private CountDownTimer start_cdt;
+    private CountDownTimer newMole_cdt;
 
     private void readyTimer(){
-        /*  HINT:
-            The "Get Ready" Timer.
-            Log.v(TAG, "Ready CountDown!" + millisUntilFinished/ 1000);
-            Toast message -"Get Ready In X seconds"
-            Log.v(TAG, "Ready CountDown Complete!");
-            Toast message - "GO!"
-            belongs here.
-            This timer countdown from 10 seconds to 0 seconds and stops after "GO!" is shown.
-         */
+        start_cdt = new CountDownTimer(10000,1000) {
+            @Override
+            public void onTick(long l) {
+                Toast.makeText(getApplicationContext(),"Get Ready In " + l/1000 + " seconds", Toast.LENGTH_SHORT);
+                Log.v(TAG, "Ready CountDown!" + l/ 1000);
+                buttonsControl(false);
+            }
+
+            @Override
+            public void onFinish() {
+                Toast.makeText(getApplicationContext(),"GO!", Toast.LENGTH_SHORT).show();
+                Log.v(TAG, "Ready CountDown Complete!");
+                start_cdt.cancel();
+
+                buttonsControl(true);
+                placeMoleTimer();
+            }
+        };
+        start_cdt.start();
     }
+
+
     private void placeMoleTimer(){
-        /* HINT:
-           Creates new mole location each second.
-           Log.v(TAG, "New Mole Location!");
-           setNewMole();
-           belongs here.
-           This is an infinite countdown timer.
-         */
+        newMole_cdt = new CountDownTimer(1000,1000) {
+            @Override
+            public void onTick(long l) {
+                Log.v(TAG,"New Mole Location");
+                setNewMole();
+            }
+
+            @Override
+            public void onFinish() {
+                newMole_cdt.start();
+            }
+        };
+        newMole_cdt.start();
     }
     private static final int[] BUTTON_IDS = {
-        /* HINT:
-            Stores the 9 buttons IDs here for those who wishes to use array to create all 9 buttons.
-            You may use if you wish to change or remove to suit your codes.*/
+            R.id.T_btnLeft, R.id.T_btnCenter, R.id.T_btnRight,
+            R.id.M_btnLeft, R.id.M_btnCenter, R.id.M_btnRight,
+            R.id.B_btnLeft, R.id.B_btnCenter, R.id.B_btnRight
+
     };
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        /*Hint:
-            This starts the countdown timers one at a time and prepares the user.
-            This also prepares the existing score brought over.
-            It also prepares the button listeners to each button.
-            You may wish to use the for loop to populate all 9 buttons with listeners.
-         */
-
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main2);
 
+        Intent intent = getIntent();
+        advancedScore = intent.getIntExtra("score",0);
+        txtScore = (TextView) findViewById(R.id.txtScore);
+        txtScore.setText(Integer.toString(advancedScore));
         Log.v(TAG, "Current User Score: " + String.valueOf(advancedScore));
 
 
         for(final int id : BUTTON_IDS){
-            /*  HINT:
-            This creates a for loop to populate all 9 buttons with listeners.
-            You may use if you wish to remove or change to suit your codes.
-            */
+            findViewById(id).setOnClickListener(this);
         }
+        readyTimer();
     }
     @Override
     protected void onStart(){
         super.onStart();
     }
+
     private void doCheck(Button checkButton)
     {
-        /* Hint:
-            Checks for hit or miss
-            Log.v(TAG, "Hit, score added!");
-            Log.v(TAG, "Missed, point deducted!");
-            belongs here.
-        */
+        if (checkButton.getText() == "*")
+        {
+            advancedScore++;
+            Log.v(TAG,"Hit, score added!");
+        }
+        else {
+            advancedScore--;
+            Log.v(TAG,"Missed, score deducted");
+        }
     }
 
     public void setNewMole()
     {
-        /* Hint:
-            Clears the previous mole location and gets a new random location of the next mole location.
-            Sets the new location of the mole.
-         */
         Random ran = new Random();
         int randomLocation = ran.nextInt(9);
+
+        Button b;
+        for(final int id : BUTTON_IDS){
+           b = findViewById(id);
+           b.setText("O");
+        }
+
+        Button selectedBut = findViewById(BUTTON_IDS[randomLocation]);
+        selectedBut.setText("*");
+    }
+
+    @Override
+    public void onClick(View v) {
+        for(int i=0;i<BUTTON_IDS.length;i++)
+        {
+            if (v.getId() == BUTTON_IDS[i])
+            {
+                Button clickedBut = findViewById(BUTTON_IDS[i]);
+                doCheck(clickedBut);
+                break;
+            }
+        }
+        txtScore.setText(Integer.toString(advancedScore));
+        setNewMole();
+    }
+    public void buttonsControl(boolean butCon)
+    {
+        Button b;
+        if (butCon){
+            for(final int id : BUTTON_IDS){
+                b = findViewById(id);
+                b.setClickable(true);
+            }
+        }
+        else{
+            for(final int id : BUTTON_IDS) {
+                b = findViewById(id);
+                b.setClickable(false);
+            }
+        }
     }
 }
 
